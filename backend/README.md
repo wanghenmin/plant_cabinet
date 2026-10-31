@@ -37,7 +37,9 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 - 网页展示设备在线状态、传感器实时值、历史曲线、采样分析、操作事件，并支持 CSV 导出。
 - 灯光支持手动开/关与恢复定时；水泵支持短时测试。每项网页手动控制均先弹出确认框，设备离线时不接受新命令。
-- 网页可调整灯光时段与 PWM、水分阈值、浇水脉冲/间隔、每日水泵运行上限；自动浇水默认关闭。
+- 网页可调整灯光时段与 PWM、自动补光 lux 阈值/回差、水分阈值、浇水脉冲/间隔、每日水泵运行上限；自动浇水和自动补光默认关闭。
+- 自动补光配置由 ESP32 本地执行：低于 `light_lux_threshold` 开灯，高于阈值加 `light_lux_hysteresis` 关灯；手动灯光模式优先。
+- 时序分析页支持真实设备数据和独立的 `plant-box-demo` 七天演示数据；点击生成按钮会创建 169 条可重复的合成采样，不会写入真实设备记录。
 - `POST /api/sensors`：设备传感器上报。
 - `GET /api/status`、`GET /api/readings`、`GET /api/readings.csv`、`GET/PUT /api/config`：状态、历史、导出与控制配置。
 - `POST /api/commands`：创建控制命令；`GET /api/device/poll`：设备心跳、获取配置和命令；`POST /api/device/commands/{id}/result`：设备回执。

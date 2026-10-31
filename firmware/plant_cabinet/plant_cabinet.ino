@@ -39,6 +39,10 @@ int lightOnMinute = 480;
 int lightOffMinute = 1200;
 uint16_t lightDuty = PWM_MAX;
 bool scheduleEnabled = true;
+bool automaticLightEnabled = false;
+int lightLuxThreshold = 300;
+int lightLuxHysteresis = 100;
+bool automaticLightOn = false;
 
 BH1750 lightMeter;
 Adafruit_SHT31 sht31;
@@ -165,6 +169,10 @@ void updateScheduledLight() {
   bool lightOn = false;
   if (manualLightMode) {
     lightOn = manualLightOn;
+  } else if (automaticLightEnabled && lightSensorReady && isfinite(latestLux)) {
+    if (!automaticLightOn && latestLux <= lightLuxThreshold) automaticLightOn = true;
+    if (automaticLightOn && latestLux >= lightLuxThreshold + lightLuxHysteresis) automaticLightOn = false;
+    lightOn = automaticLightOn;
   } else if (scheduleEnabled && time(nullptr) > 1700000000) {
     time_t currentTime = time(nullptr);
     struct tm localTime;
@@ -212,6 +220,9 @@ void applyDeviceConfig(const String &body) {
   lightOnMinute = constrain(jsonInt(body, "light_on_minute", lightOnMinute), 0, 1439);
   lightOffMinute = constrain(jsonInt(body, "light_off_minute", lightOffMinute), 0, 1439);
   lightDuty = constrain(jsonInt(body, "light_duty", lightDuty), 0, PWM_MAX);
+  automaticLightEnabled = jsonBool(body, "auto_light_enabled", automaticLightEnabled);
+  lightLuxThreshold = constrain(jsonInt(body, "light_lux_threshold", lightLuxThreshold), 0, 200000);
+  lightLuxHysteresis = constrain(jsonInt(body, "light_lux_hysteresis", lightLuxHysteresis), 0, 200000);
   automaticWateringEnabled = jsonBool(body, "auto_water_enabled", automaticWateringEnabled);
   soilStartThreshold = constrain(jsonInt(body, "soil_start_threshold", soilStartThreshold), 0, 100);
   waterPulseMs = constrain(jsonInt(body, "water_pulse_ms", waterPulseMs), 250, HARD_MAX_PUMP_RUN_MS);

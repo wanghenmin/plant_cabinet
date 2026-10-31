@@ -2,7 +2,9 @@ import csv
 import hmac
 import io
 import json
+import math
 import os
+import random
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -43,6 +45,9 @@ class DeviceConfig(BaseModel):
     light_on_minute: int = Field(default=480, ge=0, le=1439)
     light_off_minute: int = Field(default=1200, ge=0, le=1439)
     light_duty: int = Field(default=4095, ge=0, le=4095)
+    auto_light_enabled: bool = False
+    light_lux_threshold: int = Field(default=300, ge=0, le=200000)
+    light_lux_hysteresis: int = Field(default=100, ge=0, le=200000)
     auto_water_enabled: bool = False
     soil_start_threshold: int = Field(default=30, ge=0, le=100)
     water_pulse_ms: int = Field(default=1500, ge=250, le=3000)
@@ -156,7 +161,10 @@ def ensure_config(device_id: str) -> dict:
                 (device_id, json.dumps(config), timestamp()),
             )
             return config
-    return json.loads(row["config_json"])
+    stored = json.loads(row["config_json"])
+    defaults = DeviceConfig().model_dump()
+    defaults.update(stored)
+    return defaults
 
 
 def device_is_online(row: sqlite3.Row | None) -> bool:
@@ -325,3 +333,39 @@ def events(device_id: str = Query(DEVICE_ID), limit: int = Query(50, ge=1, le=50
                      "message": f"{row['action']}: {row['result_message'] or row['status']}",
                      "created_at": row["completed_at"] or row["created_at"]} for row in commands)
     return sorted(combined, key=lambda item: item["created_at"], reverse=True)[:limit]
+
+
+@app.post("/api/demo/week")
+def generate_demo_week(device_id: str = Query("plant-box-demo"), replace: bool = Query(True)) -> dict:
+    """Create a clearly separate seven-day synthetic dataset for analysis demonstrations."""
+    if not device_id.endswith("-demo"):
+        raise HTTPException(status_code=422, detail="Demo device IDs must end with -demo")
+    start = now_utc() - timedelta(days=7)
+    generator = random.Random(71003)
+    rows = []
+    for step in range(7 * 24 + 1):
+        point_time = start + timedelta(hours=step)
+        hour = point_time.hour
+        daylight = max(0.0, math.sin(math.pi * (hour - 6) / 12)) if 6 <= hour < 18 else 0.0
+        temperature = 20.5 + 5.0 * daylight + generator.uniform(-0.7, 0.7)
+        humidity = 70.0 - 12.0 * daylight + generator.uniform(-3.0, 3.0)
+        lux = max(4.0, 80.0 + 11500.0 * daylight + generator.uniform(-180, 180))
+        soil = max(18, min(78, 60 - step * 0.08 + 7 * math.sin(step / 10) + generator.uniform(-2, 2)))
+        pump = step % 31 == 0
+        if pump:
+            soil = min(78, soil + 8)
+        rows.append((device_id, timestamp(point_time), temperature, humidity, lux,
+                     int(2800 - soil * 15), round(soil), int(pump), 4095 if daylight > 0.18 else 0))
+    with connect_db() as db:
+        if replace:
+            db.execute("DELETE FROM readings WHERE device_id=?", (device_id,))
+        db.executemany(
+            """INSERT INTO readings
+            (device_id, recorded_at, air_temperature, air_humidity, light_lux,
+             soil_moisture_raw, soil_moisture_percent, pump_running, light_duty)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", rows)
+        db.execute(
+            "INSERT INTO events(device_id,event_type,message,created_at) VALUES(?,?,?,?)",
+            (device_id, "demo", "Generated seven days of synthetic sensor data", timestamp()),
+        )
+    return {"device_id": device_id, "samples": len(rows), "hours": 168}
