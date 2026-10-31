@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>植物生长舱 · 控制台</title>
+  <style>
+    :root{font-family:Inter,"Microsoft YaHei",system-ui,sans-serif;color:#18231e;background:#f3f6f2;font-synthesis:none}*{box-sizing:border-box}body{margin:0}.top{background:#183b2b;color:#fff;padding:22px max(22px,calc((100% - 1180px)/2));display:flex;justify-content:space-between;align-items:center}.top h1{font-size:21px;margin:0}.top p{margin:5px 0 0;color:#c4d7cb;font-size:13px}.wrap{max-width:1180px;margin:24px auto;padding:0 18px}.row{display:grid;gap:14px}.metrics{grid-template-columns:repeat(5,minmax(0,1fr))}.card{background:#fff;border:1px solid #e4eae4;border-radius:13px;padding:17px;box-shadow:0 2px 8px #22332208}.metric-label{font-size:12px;color:#69766e}.metric-value{font-size:25px;font-weight:650;margin-top:8px}.metric-unit{font-size:13px;font-weight:400;color:#69766e}.section{margin-top:18px}.section h2{font-size:16px;margin:0 0 12px}.charts{grid-template-columns:repeat(2,minmax(0,1fr))}.chart-card{min-height:250px}.chart-card canvas{width:100%;height:190px}.sub{font-size:12px;color:#78837c;margin-top:5px}.controls{grid-template-columns:1.1fr .9fr}.buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}button{border:0;border-radius:8px;padding:10px 14px;background:#246644;color:white;font-size:13px;font-weight:600;cursor:pointer}button:hover{filter:brightness(.94)}button.secondary{background:#e8eee9;color:#24362b}button.danger{background:#ad423a}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fields label{font-size:12px;color:#59675e;display:grid;gap:5px}input,select{width:100%;border:1px solid #d8e0d9;border-radius:7px;padding:9px;background:#fff;color:#17231b}.events{padding:0;list-style:none;margin:0}.events li{padding:9px 0;border-bottom:1px solid #edf0ed;font-size:13px;display:flex;justify-content:space-between;gap:10px}.events small{color:#768078;white-space:nowrap}.offline{color:#ac3c35}.online{color:#258052}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.toolbar select{width:auto}.notice{font-size:12px;color:#68746c;margin-top:10px;line-height:1.5}.statusline{font-size:13px;color:#d7e8dd}.toast{position:fixed;right:20px;bottom:20px;background:#183b2b;color:white;padding:12px 16px;border-radius:9px;display:none;max-width:360px}.empty{color:#78837c;font-size:13px;padding:12px 0}@media(max-width:800px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.charts,.controls{grid-template-columns:1fr}.top{align-items:flex-start;gap:10px;flex-direction:column}}@media(max-width:420px){.metrics{grid-template-columns:1fr 1fr}.metric-value{font-size:21px}}
+  </style>
+</head>
+<body>
+  <header class="top"><div><h1>🌿 植物生长舱</h1><p>环境监测 · 自动控制 · 历史分析</p></div><div id="deviceStatus" class="statusline">连接状态检查中…</div></header>
+  <main class="wrap">
+    <section class="row metrics">
+      <article class="card"><div class="metric-label">空气温度</div><div class="metric-value" id="temperature">—</div></article>
+      <article class="card"><div class="metric-label">空气湿度</div><div class="metric-value" id="humidity">—</div></article>
+      <article class="card"><div class="metric-label">土壤湿度</div><div class="metric-value" id="soil">—</div><div class="sub" id="soilRaw">原始 ADC —</div></article>
+      <article class="card"><div class="metric-label">光照</div><div class="metric-value" id="light">—</div></article>
+      <article class="card"><div class="metric-label">设备 / 最近上报</div><div class="metric-value" id="lastSeen" style="font-size:15px">—</div><div class="sub" id="readingCount">记录 0 条</div></article>
+    </section>
+
+    <section class="section">
+      <div class="toolbar"><h2>环境历史</h2><div><select id="range"><option value="24">最近 24 小时</option><option value="72">最近 3 天</option><option value="168" selected>最近 7 天</option><option value="720">最近 30 天</option></select> <button class="secondary" id="csvButton">导出 CSV</button></div></div>
+      <div class="row charts">
+        <article class="card chart-card"><h2>空气温湿度</h2><canvas id="airChart"></canvas><div class="sub">温度与相对湿度分别按各自范围显示</div></article>
+        <article class="card chart-card"><h2>土壤湿度</h2><canvas id="soilChart"></canvas><div class="sub">校准百分比；同时保留原始 ADC 用于复核</div></article>
+        <article class="card chart-card"><h2>光照强度</h2><canvas id="lightChart"></canvas><div class="sub">lux 读数，非 PPFD 测量</div></article>
+        <article class="card chart-card"><h2>设备执行状态</h2><canvas id="actuatorChart"></canvas><div class="sub">水泵运行与灯光 PWM 占空比</div></article>
+      </div>
+    </section>
+
+    <section class="section"><h2>快速时序分析</h2><div class="row metrics" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+      <article class="card"><div class="metric-label">有效采样</div><div class="metric-value" id="analysisCount">—</div></article>
+      <article class="card"><div class="metric-label">平均土壤湿度</div><div class="metric-value" id="meanSoil">—</div></article>
+      <article class="card"><div class="metric-label">平均光照</div><div class="metric-value" id="meanLux">—</div></article>
+      <article class="card"><div class="metric-label">光照与空气温度相关系数 r</div><div class="metric-value" id="lightTempCorrelation">—</div></article>
+    </div><p class="notice">Pearson 相关系数按当前时间范围内的配对采样计算；相关性仅用于观察，不代表因果关系。</p></section>
+
+    <section class="section row controls">
+      <article class="card"><h2>手动硬件测试</h2><div class="sub">每次操作都会二次确认；设备必须在线。水泵测试最长 3 秒，并受设备端每日上限保护。</div>
+        <div class="fields" style="margin-top:12px"><label>水泵测试时长（秒）<input id="pumpDuration" type="number" min="0.25" max="3" step="0.25" value="2"></label></div>
+        <div class="buttons"><button class="danger" id="pumpButton">确认后测试水泵</button><button id="lightOnButton">确认后开灯</button><button class="secondary" id="lightOffButton">确认后关灯</button><button class="secondary" id="lightAutoButton">恢复定时灯光</button></div>
+        <p class="notice">首次测试请确认水泵进水端浸入水中、出水管固定，灯带附近无易燃或易熔物。设备离线时不会排队执行控制命令。</p>
+      </article>
+      <article class="card"><h2>控制参数</h2><div class="fields">
+        <label>定时开灯（小时）<input id="lightOnHour" type="number" min="0" max="23"></label>
+        <label>定时关灯（小时）<input id="lightOffHour" type="number" min="0" max="23"></label>
+        <label>灯光 PWM（0–4095）<input id="lightDuty" type="number" min="0" max="4095"></label>
+        <label>自动浇水阈值（%）<input id="soilThreshold" type="number" min="0" max="100"></label>
+        <label>单次浇水脉冲（毫秒）<input id="pulseMs" type="number" min="250" max="3000" step="250"></label>
+        <label>最小浇水间隔（分钟）<input id="intervalMin" type="number" min="1" max="1440"></label>
+        <label>每日水泵上限（秒）<input id="dailyLimit" type="number" min="1" max="60"></label>
+        <label>自动浇水<input id="autoWater" type="checkbox" style="width:auto"></label>
+      </div><div class="buttons"><button id="saveConfig">保存并下发参数</button></div><div class="notice">本地控制保护始终在 ESP32 上执行；修改的安全上限不会高于固件硬上限。</div></article>
+    </section>
+
+    <section class="section card"><div class="toolbar"><h2>操作与系统事件</h2><button class="secondary" id="refreshButton">立即刷新</button></div><ul class="events" id="events"><li class="empty">等待数据…</li></ul></section>
+    <p class="notice">数据由设备每隔数秒上报。在线判定依据设备最近心跳；自动控制不依赖网页或后端在线。</p>
+  </main>
+  <div class="toast" id="toast"></div>
+  <script>
+    const $ = id => document.getElementById(id);
+    let readings = [];
+    const colors = {green:'#29845a', blue:'#3984c6', orange:'#df8d32', red:'#bd5147'};
+    function toast(message){const box=$('toast');box.textContent=message;box.style.display='block';setTimeout(()=>box.style.display='none',4000)}
+    async function api(path, options={}){const response=await fetch(path,{headers:{'Content-Type':'application/json',...(options.headers||{})},...options});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.detail||`HTTP ${response.status}`);return body}
+    function fmt(value,digits=1){return value===null||value===undefined?'—':Number(value).toFixed(digits)}
+    function drawChart(canvasId, series, rangeMin=null, rangeMax=null, independentScale=false){
+      const canvas=$(canvasId), rect=canvas.getBoundingClientRect(), ratio=window.devicePixelRatio||1;
+      if(!rect.width)return;canvas.width=rect.width*ratio;canvas.height=rect.height*ratio;
+      const ctx=canvas.getContext('2d');ctx.scale(ratio,ratio);const w=rect.width,h=rect.height,p={l:38,r:10,t:12,b:24};
+      ctx.clearRect(0,0,w,h);ctx.font='10px system-ui';ctx.fillStyle='#748078';ctx.strokeStyle='#e9eeea';ctx.lineWidth=1;
+      for(let i=0;i<4;i++){const y=p.t+(h-p.t-p.b)*i/3;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();}
+      const all=series.flatMap(s=>s.values.map(v=>v.value).filter(v=>Number.isFinite(v)));
+      if(!all.length){ctx.fillText('等待设备数据',p.l+8,h/2);return;}
+      let min=rangeMin===null?Math.min(...all):rangeMin,max=rangeMax===null?Math.max(...all):rangeMax;if(min===max){min-=1;max+=1;}
+      ctx.fillStyle='#748078';ctx.fillText(max.toFixed(0),2,p.t+4);ctx.fillText(min.toFixed(0),2,h-p.b+3);
+      const start=Date.now()-Number($('range').value)*3600000;
+      series.forEach((s,index)=>{const values=s.values.map(point=>point.value).filter(Number.isFinite);let sMin=min,sMax=max;if(independentScale&&values.length){sMin=Math.min(...values);sMax=Math.max(...values);if(sMin===sMax){sMin-=1;sMax+=1;}}ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.beginPath();let started=false;for(const point of s.values){const x=p.l+(Math.max(0,new Date(point.time).getTime()-start)/(Number($('range').value)*3600000))*(w-p.l-p.r);const y=p.t+(sMax-point.value)/(sMax-sMin)*(h-p.t-p.b);if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);}if(started)ctx.stroke();});
+      let lx=p.l;series.forEach(s=>{ctx.fillStyle=s.color;ctx.fillRect(lx,h-12,9,3);ctx.fillStyle='#536158';ctx.fillText(s.name,lx+13,h-8);lx+=ctx.measureText(s.name).width+30;});
+    }
+    function renderCharts(){
+      drawChart('airChart',[{name:'°C',color:colors.orange,values:readings.map(r=>({time:r.recorded_at,value:r.air_temperature}))},{name:'% RH',color:colors.blue,values:readings.map(r=>({time:r.recorded_at,value:r.air_humidity}))}],null,null,true);
+      drawChart('soilChart',[{name:'土壤 %',color:colors.green,values:readings.map(r=>({time:r.recorded_at,value:r.soil_moisture_percent}))}],0,100);
+      drawChart('lightChart',[{name:'lux',color:colors.orange,values:readings.map(r=>({time:r.recorded_at,value:r.light_lux}))}],0,null);
+      drawChart('actuatorChart',[{name:'水泵',color:colors.red,values:readings.map(r=>({time:r.recorded_at,value:r.pump_running?1:0}))},{name:'灯光占空比',color:colors.blue,values:readings.map(r=>({time:r.recorded_at,value:r.light_duty}))}],0,4095);
+    }
+    function pearsonCorrelation(points){const pairs=points.filter(p=>Number.isFinite(p[0])&&Number.isFinite(p[1]));if(pairs.length<2)return null;const mx=pairs.reduce((a,p)=>a+p[0],0)/pairs.length,my=pairs.reduce((a,p)=>a+p[1],0)/pairs.length;let covariance=0,vx=0,vy=0;for(const [x,y] of pairs){covariance+=(x-mx)*(y-my);vx+=(x-mx)**2;vy+=(y-my)**2;}return vx===0||vy===0?null:covariance/Math.sqrt(vx*vy);}
+    function renderAnalysis(){const mean=values=>values.length?values.reduce((a,b)=>a+b,0)/values.length:null;const soils=readings.map(r=>r.soil_moisture_percent).filter(Number.isFinite),luxes=readings.map(r=>r.light_lux).filter(Number.isFinite);const correlation=pearsonCorrelation(readings.map(r=>[r.light_lux,r.air_temperature]));$('analysisCount').textContent=readings.length;$('meanSoil').innerHTML=`${mean(soils)===null?'—':mean(soils).toFixed(1)} <span class="metric-unit">%</span>`;$('meanLux').innerHTML=`${mean(luxes)===null?'—':mean(luxes).toFixed(0)} <span class="metric-unit">lux</span>`;$('lightTempCorrelation').textContent=correlation===null?'数据不足':correlation.toFixed(2);}
+    async function refresh(){
+      try{
+        const hours=Number($('range').value);
+        const [status,data,events]=await Promise.all([api('/api/status'),api(`/api/readings?hours=${hours}&limit=3000`),api('/api/events?limit=25')]);
+        readings=data;
+        const latest=status.latest;
+        $('temperature').innerHTML=`${fmt(latest?.air_temperature)} <span class="metric-unit">°C</span>`;
+        $('humidity').innerHTML=`${fmt(latest?.air_humidity)} <span class="metric-unit">% RH</span>`;
+        $('soil').innerHTML=`${latest?latest.soil_moisture_percent:'—'} <span class="metric-unit">%</span>`;
+        $('soilRaw').textContent=`原始 ADC ${latest?.soil_moisture_raw??'—'}`;
+        $('light').innerHTML=`${fmt(latest?.light_lux,0)} <span class="metric-unit">lux</span>`;
+        $('lastSeen').textContent=status.last_seen?new Date(status.last_seen).toLocaleString():'尚无数据';
+        $('readingCount').textContent=`累计记录 ${status.reading_count} 条`;
+        $('deviceStatus').innerHTML=status.online?'<span class="online">● 设备在线</span>':'<span class="offline">● 设备离线</span>';
+        $('events').innerHTML=events.length?events.map(e=>`<li><span>${escapeHtml(e.event_type)} · ${escapeHtml(e.message)}</span><small>${new Date(e.created_at).toLocaleString()}</small></li>`).join(''):'<li class="empty">暂无事件</li>';
+        renderCharts();
+        renderAnalysis();
+      }catch(error){toast(error.message)}
+    }
+    function escapeHtml(text){return String(text??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+    async function loadConfig(){try{const c=await api('/api/config');$('lightOnHour').value=Math.floor(c.light_on_minute/60);$('lightOffHour').value=Math.floor(c.light_off_minute/60);$('lightDuty').value=c.light_duty;$('soilThreshold').value=c.soil_start_threshold;$('pulseMs').value=c.water_pulse_ms;$('intervalMin').value=Math.round(c.water_interval_ms/60000);$('dailyLimit').value=Math.round(c.max_daily_pump_ms/1000);$('autoWater').checked=c.auto_water_enabled;}catch(error){toast(error.message)}}
+    async function sendCommand(action,confirmText,duration=2000){if(!window.confirm(confirmText))return;try{const result=await api('/api/commands',{method:'POST',body:JSON.stringify({action,duration_ms:duration})});toast(`命令已排队（#${result.id}），等待设备执行`);setTimeout(refresh,1500);}catch(error){toast(error.message)}}
+    $('pumpButton').onclick=()=>{const seconds=Number($('pumpDuration').value);if(!Number.isFinite(seconds)||seconds<=0||seconds>3){toast('水泵测试时长必须在 0 到 3 秒之间');return;}sendCommand('pump_test',`确认启动水泵 ${seconds} 秒？请先确认泵已浸水、出水管安全。`,Math.round(seconds*1000));};
+    $('lightOnButton').onclick=()=>sendCommand('light_on','确认打开植物灯？');
+    $('lightOffButton').onclick=()=>sendCommand('light_off','确认关闭植物灯？');
+    $('lightAutoButton').onclick=()=>sendCommand('light_auto','确认恢复自动定时灯光？');
+    $('saveConfig').onclick=async()=>{try{const body={schedule_enabled:true,light_on_minute:Number($('lightOnHour').value)*60,light_off_minute:Number($('lightOffHour').value)*60,light_duty:Number($('lightDuty').value),auto_water_enabled:$('autoWater').checked,soil_start_threshold:Number($('soilThreshold').value),water_pulse_ms:Number($('pulseMs').value),water_interval_ms:Number($('intervalMin').value)*60000,max_daily_pump_ms:Number($('dailyLimit').value)*1000};await api('/api/config',{method:'PUT',body:JSON.stringify(body)});toast('参数已保存，设备在线时会轮询获取');}catch(error){toast(error.message)}};
+    $('csvButton').onclick=()=>{location.href=`/api/readings.csv?hours=${$('range').value}`};
+    $('range').onchange=refresh;$('refreshButton').onclick=refresh;window.onresize=renderCharts;
+    loadConfig();refresh();setInterval(refresh,5000);
+  </script>
+</body>
+</html>
