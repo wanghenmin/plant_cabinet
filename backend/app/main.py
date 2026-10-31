@@ -268,7 +268,7 @@ def update_config(config: DeviceConfig, device_id: str = Query(DEVICE_ID)) -> di
 
 @app.post("/api/commands")
 def create_command(request: CommandRequest) -> dict:
-    if request.action not in {"pump_test", "light_on", "light_off", "light_auto"}:
+    if request.action not in {"pump_test", "pump_reset", "light_on", "light_off", "light_auto"}:
         raise HTTPException(status_code=422, detail="Unsupported command")
     with connect_db() as db:
         state = db.execute("SELECT * FROM device_state WHERE device_id=?", (request.device_id,)).fetchone()

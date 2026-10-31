@@ -128,12 +128,21 @@ bool startPump(uint32_t requestedMs, bool manual) {
   pumpStartedAt = millis();
   pumpStopAt = pumpStartedAt + runTime;
   pumpRunning = true;
-  hasWatered = true;
+  if (!manual) hasWatered = true;
   digitalWrite(PUMP_PIN, HIGH);
   Serial.print("Pump on for ");
   Serial.print(runTime);
   Serial.println(" ms");
   return true;
+}
+
+void resetPumpLimits() {
+  hasWatered = false;
+  lastWaterEndedAt = 0;
+  lastAutoWaterAttemptAt = 0;
+  dailyWindowStartedAt = millis();
+  dailyPumpRuntimeMs = 0;
+  Serial.println("Pump interval and daily runtime limits reset");
 }
 
 void readSensors() {
@@ -242,8 +251,10 @@ void maintainWifi() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 }
 
-String numberOrNull(float value) {
-  return isnan(value) || isinf(value) ? String("null") : String(value, 2);
+String numberOrNull(float value, float minimum, float maximum) {
+  return isnan(value) || isinf(value) || value < minimum || value > maximum
+      ? String("null")
+      : String(value, 2);
 }
 
 void uploadTelemetry() {
@@ -252,13 +263,17 @@ void uploadTelemetry() {
   http.begin(String(BACKEND_URL) + "/api/sensors");
   addDeviceHeaders(http);
   http.addHeader("Content-Type", "application/json");
-  String body = "{\"device_id\":\"" + String(DEVICE_ID) + "\",\"air_temperature\":" + numberOrNull(latestTemperature);
-  body += ",\"air_humidity\":" + numberOrNull(latestHumidity) + ",\"light_lux\":" + numberOrNull(latestLux);
+  String body = "{\"device_id\":\"" + String(DEVICE_ID) + "\",\"air_temperature\":" + numberOrNull(latestTemperature, -40, 100);
+  body += ",\"air_humidity\":" + numberOrNull(latestHumidity, 0, 100) + ",\"light_lux\":" + numberOrNull(latestLux, 0, 200000);
   body += ",\"soil_moisture_raw\":" + String(latestSoilRaw) + ",\"soil_moisture_percent\":" + String(latestSoilPercent);
   body += ",\"pump_running\":" + String(pumpRunning ? "true" : "false");
-  body += ",\"light_duty\":" + String(ledcRead(LIGHT_PIN)) + "}";
+  int currentLightDuty = constrain(ledcRead(LIGHT_PIN), 0, PWM_MAX);
+  body += ",\"light_duty\":" + String(currentLightDuty) + "}";
   int status = http.POST(body);
-  if (status < 200 || status >= 300) Serial.printf("Telemetry HTTP error: %d\n", status);
+  if (status < 200 || status >= 300) {
+    Serial.printf("Telemetry HTTP error: %d\n", status);
+    if (status > 0) Serial.println(http.getString());
+  }
   http.end();
 }
 
@@ -312,6 +327,10 @@ void pollBackend() {
     uint32_t duration = constrain(jsonInt(body, "duration_ms", 2000), 250, HARD_MAX_PUMP_RUN_MS);
     success = startPump(duration, true);
     message = success ? "pump pulse started" : "pump safety check rejected command";
+  } else if (action == "pump_reset") {
+    resetPumpLimits();
+    success = true;
+    message = "pump interval and daily limit reset";
   } else if (action == "light_on") {
     manualLightMode = true;
     manualLightOn = true;
@@ -341,14 +360,22 @@ void handleSerialCommand(String command) {
     readSensors();
   } else if (command == "STATUS") {
     Serial.print("Auto watering: "); Serial.println(automaticWateringEnabled ? "ON" : "OFF");
+    Serial.print("Soil start threshold: "); Serial.print(soilStartThreshold); Serial.println("%");
     Serial.print("Pump: "); Serial.println(pumpRunning ? "ON" : "OFF");
     Serial.print("Light control: "); Serial.println(manualLightMode ? "MANUAL" : "SCHEDULE");
     Serial.print("Soil: "); Serial.print(latestSoilRaw); Serial.print(" raw / "); Serial.print(latestSoilPercent); Serial.println("%");
-    Serial.print("Pump runtime in current 24h window: "); Serial.print(dailyPumpRuntimeMs); Serial.println(" ms");
+    Serial.print("Pump runtime in current 24h window: "); Serial.print(dailyPumpRuntimeMs / 1000); Serial.print(" / "); Serial.print(maxDailyPumpMs / 1000); Serial.println(" s");
+    if (hasWatered && millis() - lastWaterEndedAt < waterIntervalMs) {
+      Serial.print("Automatic watering interval remaining: ");
+      Serial.print((waterIntervalMs - (millis() - lastWaterEndedAt)) / 1000);
+      Serial.println(" s");
+    }
   } else if (command == "PUMP TEST") {
     startPump(2000, true);
   } else if (command == "PUMP STOP") {
     stopPump("serial command");
+  } else if (command == "PUMP RESET") {
+    resetPumpLimits();
   } else if (command == "AUTO ON") {
     automaticWateringEnabled = true;
     Serial.println("Automatic watering enabled");
