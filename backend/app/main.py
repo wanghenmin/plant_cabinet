@@ -1,10 +1,8 @@
-import csv
+﻿import csv
 import hmac
 import io
 import json
-import math
 import os
-import random
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -337,25 +335,27 @@ def events(device_id: str = Query(DEVICE_ID), limit: int = Query(50, ge=1, le=50
 
 @app.post("/api/demo/week")
 def generate_demo_week(device_id: str = Query("plant-box-demo"), replace: bool = Query(True)) -> dict:
-    """Create a clearly separate seven-day synthetic dataset for analysis demonstrations."""
+    """Load a clearly labelled CSV scenario for analysis demonstrations."""
     if not device_id.endswith("-demo"):
         raise HTTPException(status_code=422, detail="Demo device IDs must end with -demo")
-    start = now_utc() - timedelta(days=7)
-    generator = random.Random(71003)
+    end = now_utc().replace(minute=0, second=0, microsecond=0)
+    start = end - timedelta(hours=165)
     rows = []
-    for step in range(7 * 24 + 1):
-        point_time = start + timedelta(hours=step)
-        hour = point_time.hour
-        daylight = max(0.0, math.sin(math.pi * (hour - 6) / 12)) if 6 <= hour < 18 else 0.0
-        temperature = 20.5 + 5.0 * daylight + generator.uniform(-0.7, 0.7)
-        humidity = 70.0 - 12.0 * daylight + generator.uniform(-3.0, 3.0)
-        lux = max(4.0, 80.0 + 11500.0 * daylight + generator.uniform(-180, 180))
-        soil = max(18, min(78, 60 - step * 0.08 + 7 * math.sin(step / 10) + generator.uniform(-2, 2)))
-        pump = step % 31 == 0
-        if pump:
-            soil = min(78, soil + 8)
-        rows.append((device_id, timestamp(point_time), temperature, humidity, lux,
-                     int(2800 - soil * 15), round(soil), int(pump), 4095 if daylight > 0.18 else 0))
+    csv_path = BACKEND_DIR / "data" / "demo_week_scenario.csv"
+    with csv_path.open("r", newline="", encoding="utf-8") as source:
+        for record in csv.DictReader(source):
+            def optional_float(value: str) -> float | None:
+                return None if value == "NA" else float(value)
+
+            point_time = start + timedelta(hours=float(record["hour_offset"]))
+            soil_percent = int(record["soil_moisture_percent"])
+            soil_raw = int(record["soil_moisture_raw"])
+            rows.append((device_id, timestamp(point_time),
+                         optional_float(record["air_temperature"]),
+                         optional_float(record["air_humidity"]),
+                         optional_float(record["light_lux"]),
+                         soil_raw, soil_percent,
+                         int(record["pump_running"]), int(record["light_duty"])))
     with connect_db() as db:
         if replace:
             db.execute("DELETE FROM readings WHERE device_id=?", (device_id,))
@@ -366,6 +366,11 @@ def generate_demo_week(device_id: str = Query("plant-box-demo"), replace: bool =
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", rows)
         db.execute(
             "INSERT INTO events(device_id,event_type,message,created_at) VALUES(?,?,?,?)",
-            (device_id, "demo", "Generated seven days of synthetic sensor data", timestamp()),
+            (device_id, "demo", "Loaded seven-day synthetic scenario from CSV", timestamp()),
         )
-    return {"device_id": device_id, "samples": len(rows), "hours": 168}
+    intervals = [float(record["hour_offset"]) for record in csv.DictReader(csv_path.open("r", newline="", encoding="utf-8"))]
+    return {"device_id": device_id, "samples": len(rows),
+            "sampling_interval_hours": round(sum(b - a for a, b in zip(intervals, intervals[1:])) / max(1, len(intervals) - 1), 2),
+            "missing_environment_records": sum(row[2] is None or row[3] is None or row[4] is None for row in rows)}
+
+

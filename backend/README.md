@@ -1,4 +1,4 @@
-# Plant Care System Backend
+﻿# Plant Care System Backend
 
 The backend uses FastAPI, SQLite, and a native HTML/JavaScript dashboard. Python dependencies and runtime are managed in the `code/backend/.venv` virtual environment, and configuration is provided through `.env` environment variables.
 
@@ -7,7 +7,7 @@ The backend uses FastAPI, SQLite, and a native HTML/JavaScript dashboard. Python
 First-time setup:
 
 ```powershell
-cd F:\辅导\物联网植物养护\code\backend
+cd F:\杈呭\鐗╄仈缃戞鐗╁吇鎶code\backend
 py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
@@ -17,7 +17,7 @@ Copy-Item .env.example .env
 Edit `.env` and replace `DEVICE_TOKEN` with a long random string. Start the service:
 
 ```powershell
-cd F:\辅导\物联网植物养护\code\backend
+cd F:\杈呭\鐗╄仈缃戞鐗╁吇鎶code\backend
 .\.venv\Scripts\Activate.ps1
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
@@ -39,7 +39,7 @@ If `DEVICE_TOKEN` is set in `.env`, device API requests must include the same to
 - Lighting supports manual on/off and restoring the schedule. The pump supports short tests. Every manual dashboard control requires confirmation, and new commands are rejected while the device is offline.
 - The dashboard can adjust lighting hours and PWM, automatic-light lux threshold and hysteresis, soil-moisture threshold, watering pulse and interval, and the daily pump runtime limit. Automatic watering and automatic lighting are disabled by default.
 - Automatic lighting is controlled locally by the ESP32: it turns on below `light_lux_threshold` and turns off above the threshold plus `light_lux_hysteresis`. Manual lighting mode takes priority.
-- The time-series analysis page supports real device data and a separate seven-day `plant-box-demo` dataset. Generating the demo creates 169 reproducible synthetic samples and does not modify real device records.
+- The time-series analysis page supports real device data and a separate seven-day `plant-box-demo` scenario dataset. Loading the demo replaces its separate device ID with 56 CSV samples at irregular roughly three-hour intervals, including three watering-event markers and complete environmental readings; it does not modify real device records. The scenario is synthetic and is not a real continuous hardware experiment.
 - `POST /api/sensors`: submit sensor readings from a device.
 - `GET /api/status`, `GET /api/readings`, `GET /api/readings.csv`, `GET/PUT /api/config`: retrieve status and history, export readings, and manage control configuration.
 - `POST /api/commands`: create a control command; `GET /api/device/poll`: device heartbeat and retrieval of configuration and commands; `POST /api/device/commands/{id}/result`: submit a device command result.
@@ -48,3 +48,4 @@ If `DEVICE_TOKEN` is set in `.env`, device API requests must include the same to
 ## Hardware Testing Notes
 
 Dashboard pump tests are limited to 3 seconds. The firmware also enforces a 3-second per-run limit and a 60-second cumulative limit per 24 hours. Before testing, make sure the pump intake is submerged, the outlet tube is secured, and the power supply is safe. Power the light strip and pump with an external 5 V supply, and connect their ground to ESP32 ground according to the verified wiring. Keep automatic watering disabled during the first test. Software limits do not replace on-site supervision or hardware power-cut protection.
+
