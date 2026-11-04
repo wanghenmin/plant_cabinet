@@ -1,65 +1,405 @@
 <!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Plant Cabinet | Dashboard</title>
-  <style>
-    :root{font-family:Inter,"Microsoft YaHei",system-ui,sans-serif;color:#18231e;background:#f4f7f5;font-synthesis:none;--ink:#18352a;--muted:#708078;--line:#e3ebe5;--green:#28764f;--soft:#eef5f0;--amber:#c77c29;--red:#b54d45}*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{border:0;border-radius:7px;padding:10px 14px;background:var(--green);color:#fff;font-size:13px;font-weight:650;cursor:pointer}button:hover{filter:brightness(.95)}button.secondary{background:#eaf1ec;color:#294235}button.warning{background:#b54d45}.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}.sidebar{background:var(--ink);color:#dcebe1;padding:24px 14px;display:flex;flex-direction:column}.brand{padding:0 12px 25px;border-bottom:1px solid #ffffff1c}.brand strong{display:block;font-size:18px;color:#fff}.brand span{display:block;margin-top:6px;font-size:12px;color:#a7c0b0}.nav{padding-top:22px}.nav button{width:100%;text-align:left;background:transparent;color:#acc4b4;margin:3px 0;padding:12px;border-radius:7px;font-weight:550}.nav button.active,.nav button:hover{background:#ffffff14;color:#fff}.nav button span{display:inline-block;width:25px;color:#9bd1ad}.side-foot{margin-top:auto;padding:14px 12px;color:#8eaa99;font-size:12px;line-height:1.6}.main{min-width:0}.topbar{height:78px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,4vw,48px)}.topbar h1{margin:0;font-size:21px;color:var(--ink)}.topbar p{margin:5px 0 0;color:var(--muted);font-size:12px}.status{font-size:13px}.online{color:#21814f}.offline{color:var(--red)}.content{max-width:1400px;padding:28px clamp(20px,4vw,48px) 50px}.view{display:none}.view.active{display:block}.section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}.section-head h2{margin:0;font-size:20px;color:var(--ink)}.section-head p{margin:6px 0 0;color:var(--muted);font-size:13px}.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.toolbar select{width:auto}.grid{display:grid;gap:15px}.metrics{grid-template-columns:repeat(5,minmax(0,1fr))}.card{background:#fff;border:1px solid var(--line);border-radius:9px;padding:18px;box-shadow:0 3px 12px #17392708}.metric-label{font-size:12px;color:var(--muted)}.metric-value{font-size:25px;font-weight:700;margin-top:9px;color:var(--ink)}.metric-unit{font-size:12px;font-weight:450;color:var(--muted)}.sub,.hint{font-size:12px;color:var(--muted);line-height:1.55}.sub{margin-top:6px}.charts{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:16px}.chart-card{min-height:260px}.chart-card h3{margin:0;font-size:15px;color:var(--ink)}canvas{width:100%;height:190px;margin-top:10px}.split{grid-template-columns:1.2fr .8fr}.control-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.card h3{font-size:15px;margin:0 0 5px;color:var(--ink)}.card h4{font-size:13px;margin:20px 0 10px;color:var(--ink)}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.field{display:grid;gap:6px;font-size:12px;color:#53645a}.field.full{grid-column:1/-1}input,select{width:100%;border:1px solid #d6e1d9;border-radius:6px;padding:9px;background:#fff;color:#17231b}input[type=range]{padding:0;accent-color:var(--green)}input[type=checkbox]{width:17px;height:17px;accent-color:var(--green)}.range-line{display:grid;grid-template-columns:1fr 90px;gap:12px;align-items:center}.range-value{text-align:right;font-size:13px;font-weight:700;color:var(--green)}.buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.divider{border:0;border-top:1px solid var(--line);margin:19px 0}.live-box{background:var(--soft);border-radius:8px;padding:14px;margin-top:15px}.live-box strong{font-size:22px;color:var(--green)}.analysis-metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:15px}.table-wrap{overflow:auto}.events{list-style:none;margin:0;padding:0}.events li{padding:10px 0;border-bottom:1px solid #edf1ee;display:flex;justify-content:space-between;gap:14px;font-size:13px}.events small{color:var(--muted);white-space:nowrap}.notice{background:#fff9ed;border:1px solid #f3dfb9;color:#765522;padding:11px 13px;border-radius:7px;font-size:12px;line-height:1.6;margin-top:15px}.toast{position:fixed;right:22px;bottom:22px;background:var(--ink);color:#fff;padding:12px 16px;border-radius:7px;display:none;max-width:360px;z-index:3}.empty{color:var(--muted);font-size:13px;padding:15px 0}@media(max-width:1050px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.split,.control-grid{grid-template-columns:1fr}}@media(max-width:760px){.app{display:block}.sidebar{padding:13px;display:block}.brand{padding:5px 8px 13px}.nav{display:flex;gap:4px;padding-top:8px;overflow:auto}.nav button{white-space:nowrap;width:auto;margin:0}.side-foot{display:none}.topbar{height:auto;padding:16px 20px}.content{padding:22px 16px}.charts{grid-template-columns:1fr}.metrics,.analysis-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.section-head{display:block}.toolbar{margin-top:14px}.fields{grid-template-columns:1fr}}
-  </style>
-</head>
-<body>
-<div class="app">
-  <aside class="sidebar">
-    <div class="brand"><strong>Plant Cabinet</strong><span>SIoT Environmental Monitoring and Control System</span></div>
-    <nav class="nav">
-      <button class="active" data-view="overview"><span>01</span>System Overview</button>
-      <button data-view="control"><span>02</span>Device Control</button>
-      <button data-view="analysis"><span>03</span>Time-Series Analysis</button>
-      <button data-view="events"><span>04</span>Activity Log</button>
-    </nav>
-    <div class="side-foot">Data reported by ESP32 every 10 seconds<br>Control commands are safely executed on the device</div>
-  </aside>
-  <main class="main">
-    <header class="topbar"><div><h1 id="pageTitle">System Overview</h1><p>Environmental status, control actions, and data analysis</p></div><div id="deviceStatus" class="status">Checking device connection...</div></header>
-    <div class="content">
-      <section class="view active" id="overview">
-        <div class="section-head"><div><h2>Current Environment</h2><p>Device <span id="deviceName">plant-box-01</span> latest status</p></div><div class="toolbar"><select id="range"><option value="24">Last 24 hours</option><option value="72">Last 3 days</option><option value="168" selected>Last 7 days</option><option value="720">Last 30 days</option></select><button class="secondary" id="csvButton">Export CSV</button></div></div>
-        <div class="grid metrics"><article class="card"><div class="metric-label">Air Temperature</div><div class="metric-value" id="temperature">—</div></article><article class="card"><div class="metric-label">Air Humidity</div><div class="metric-value" id="humidity">—</div></article><article class="card"><div class="metric-label">Soil Moisture</div><div class="metric-value" id="soil">—</div><div class="sub" id="soilRaw">Raw ADC —</div></article><article class="card"><div class="metric-label">Light Intensity</div><div class="metric-value" id="light">—</div></article><article class="card"><div class="metric-label">Last Report</div><div class="metric-value" id="lastSeen" style="font-size:15px">—</div><div class="sub" id="readingCount">Total Readings: 0</div></article></div>
-        <div class="grid charts"><article class="card chart-card"><h3>Air Temperature and Humidity Trend</h3><canvas id="airChart"></canvas><div class="sub">Temperature and relative humidity are displayed on their own scales</div></article><article class="card chart-card"><h3>Soil Moisture Trend</h3><canvas id="soilChart"></canvas><div class="sub">Calibrated percentage; ADC retained for verification</div></article><article class="card chart-card"><h3>Light Intensity Trend</h3><canvas id="lightChart"></canvas><div class="sub">BH1750 lux reading, not a PPFD measurement</div></article><article class="card chart-card"><h3>Actuator Status</h3><canvas id="actuatorChart"></canvas><div class="sub">Pump status and light PWM</div></article></div>
-      </section>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Plant Cabinet | Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>Plant Cabinet</strong
+          >
+        </div>
+        <nav class="nav">
+          <button class="active" data-view="overview">
+            <span>01</span>System Overview
+          </button>
+          <button data-view="control"><span>02</span>Device Control</button>
+          <button data-view="analysis">
+            <span>03</span>Time-Series Analysis
+          </button>
+          <button data-view="events"><span>04</span>Activity Log</button>
+        </nav>
+      </aside>
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h1 id="pageTitle">System Overview</h1>
+            <p>Environmental status, control actions, and data analysis</p>
+          </div>
+          <div id="deviceStatus" class="status">
+            Checking device connection...
+          </div>
+        </header>
+        <div class="content">
+          <section class="view active" id="overview">
+            <div class="section-head">
+              <div>
+                <h2>Current Environment</h2>
+                <p>
+                  Device <span id="deviceName">plant-box-01</span> latest status
+                </p>
+              </div>
+              <div class="toolbar">
+                <select id="range">
+                  <option value="24">Last 24 hours</option>
+                  <option value="72">Last 3 days</option>
+                  <option value="168" selected>Last 7 days</option>
+                  <option value="720">Last 30 days</option></select
+                ><button class="secondary" id="csvButton">Export CSV</button>
+              </div>
+            </div>
+            <div class="grid metrics">
+              <article class="card">
+                <div class="metric-label">Air Temperature</div>
+                <div class="metric-value" id="temperature">—</div>
+              </article>
+              <article class="card">
+                <div class="metric-label">Air Humidity</div>
+                <div class="metric-value" id="humidity">—</div>
+              </article>
+              <article class="card">
+                <div class="metric-label">Soil Moisture</div>
+                <div class="metric-value" id="soil">—</div>
+                <div class="sub" id="soilRaw">Raw ADC —</div>
+              </article>
+              <article class="card">
+                <div class="metric-label">Light Intensity</div>
+                <div class="metric-value" id="light">—</div>
+              </article>
+              <article class="card">
+                <div class="metric-label">Last Report</div>
+                <div class="metric-value" id="lastSeen" style="font-size: 15px">
+                  —
+                </div>
+                <div class="sub" id="readingCount">Total Readings: 0</div>
+              </article>
+            </div>
+            <div class="grid charts">
+              <article class="card chart-card">
+                <h3>Air Temperature and Humidity Trend</h3>
+                <canvas id="airChart"></canvas>
+                <div class="sub">
+                  Temperature and relative humidity are displayed on their own
+                  scales
+                </div>
+              </article>
+              <article class="card chart-card">
+                <h3>Soil Moisture Trend</h3>
+                <canvas id="soilChart"></canvas>
+                <div class="sub">
+                  Calibrated percentage; ADC retained for verification
+                </div>
+              </article>
+              <article class="card chart-card">
+                <h3>Light Intensity Trend</h3>
+                <canvas id="lightChart"></canvas>
+                <div class="sub">
+                  BH1750 lux reading, not a PPFD measurement
+                </div>
+              </article>
+              <article class="card chart-card">
+                <h3>Actuator Status</h3>
+                <canvas id="actuatorChart"></canvas>
+                <div class="sub">Pump status and light PWM</div>
+              </article>
+            </div>
+          </section>
 
-      <section class="view" id="control"><div class="section-head"><div><h2>Device Control</h2><p>Manual tests and automatic strategies are managed separately. All hazardous actions require confirmation.</p></div></div><div class="grid control-grid">
-        <article class="card"><h3>Manual Light Test</h3><p class="hint">Save after adjusting PWM. The device applies the setting when it polls for configuration. Measured lux refreshes with the next sensor report.</p><div class="field full"><label>Light Intensity (PWM 0-4095)</label><div class="range-line"><input id="lightDutyRange" type="range" min="0" max="4095" step="1" value="4095"><div class="range-value" id="lightDutyValue">4095 / 100%</div></div></div><div class="live-box"><div class="metric-label">Current measured light</div><strong id="controlLux">—</strong> <span class="metric-unit">lux</span><div class="sub" id="controlDuty">Current PWM —</div></div><div class="buttons"><button id="applyDuty">Save Brightness</button><button id="lightOnButton">Turn Light On</button><button class="secondary" id="lightOffButton">Turn Light Off</button><button class="secondary" id="lightAutoButton">Restore Automatic Mode</button></div><div class="notice">On/off and brightness changes use the existing device interface. Observe the light and sensor readings, and avoid staring at a bright light for extended periods.</div></article>
-        <article class="card"><h3>Pump Test</h3><p class="hint">For hardware integration testing only. Firmware limits each run to 3 seconds and enforces a daily cumulative runtime limit.</p><div class="field"><label>Test Duration (seconds)</label><input id="pumpDuration" type="number" min="0.25" max="3" step="0.25" value="2"></div><div class="buttons"><button class="warning" id="pumpButton">Test Pump</button><button class="secondary" id="pumpResetButton">Reset Watering Limits</button></div><div class="notice">Before testing, ensure the pump intake is submerged, the outlet tube is secured, and the power and water setup is safe. Reset clears the device watering interval and daily cumulative runtime; use it only for testing.</div><hr class="divider"><h3>Automatic Watering Parameters</h3><div class="fields"><label class="field">Automatic Watering<input id="autoWater" type="checkbox"></label><label class="field">Soil Start Threshold (%)<input id="soilThreshold" type="number" min="0" max="100"></label><label class="field">Pulse Duration (ms)<input id="pulseMs" type="number" min="250" max="3000" step="250"></label><label class="field">Minimum Interval (minutes)<input id="intervalMin" type="number" min="1" max="1440"></label><label class="field">Daily Limit (seconds)<input id="dailyLimit" type="number" min="1" max="60"></label></div><div class="hint" style="margin-top:12px">The soil start threshold allows watering when moisture is at or below the selected percentage. For example, with a 5% threshold, the reading must be 5% or lower. Automatic Watering must also be enabled and the settings saved.</div><div class="buttons"><button id="saveWaterConfig">Save Automatic Watering Parameters</button></div></article>
-        <article class="card"><h3>Automatic Lighting Strategy</h3><p class="hint">The device uses measured BH1750 lux to decide when to add light. Hysteresis prevents frequent switching near the threshold.</p><label class="field">Automatic Lighting<input id="autoLight" type="checkbox"></label><div class="fields" style="margin-top:13px"><label class="field">Turn on below (lux)<input id="luxThreshold" type="number" min="0" max="200000"></label><label class="field">Turn off above threshold by (lux)<input id="luxHysteresis" type="number" min="0" max="200000"></label><label class="field">Automatic Lighting PWM<input id="lightDutyNumber" type="number" min="0" max="4095"></label></div><div class="buttons"><button id="saveConfig">Save Automatic Control Settings</button></div><div class="notice">Manual mode takes priority over Automatic Lighting. The device resumes the lux strategy after you select Restore Automatic Mode—</div></article>
-        <article class="card"><h3>Scheduled Lighting Strategy</h3><p class="hint">The schedule runs locally on the ESP32 and continues to use saved settings if the network is interrupted.</p><div class="fields"><label class="field">Scheduled On (hour)<input id="lightOnHour" type="number" min="0" max="23"></label><label class="field">Scheduled Off (hour)<input id="lightOffHour" type="number" min="0" max="23"></label></div><div class="buttons"><button class="secondary" id="saveSchedule">Save Schedule</button></div></article>
-      </div></section>
+          <section class="view" id="control">
+            <div class="section-head">
+              <div>
+                <h2>Device Control</h2>
+                <p>
+                  Manual tests and automatic strategies are managed separately.
+                  All hazardous actions require confirmation.
+                </p>
+              </div>
+            </div>
+            <div class="grid control-grid">
+              <article class="card">
+                <h3>Manual Light Test</h3>
+                <p class="hint">
+                  Save after adjusting PWM. The device applies the setting when
+                  it polls for configuration. Measured lux refreshes with the
+                  next sensor report.
+                </p>
+                <div class="field full">
+                  <label>Light Intensity (PWM 0-4095)</label>
+                  <div class="range-line">
+                    <input
+                      id="lightDutyRange"
+                      type="range"
+                      min="0"
+                      max="4095"
+                      step="1"
+                      value="4095"
+                    />
+                    <div class="range-value" id="lightDutyValue">
+                      4095 / 100%
+                    </div>
+                  </div>
+                </div>
+                <div class="live-box">
+                  <div class="metric-label">Current measured light</div>
+                  <strong id="controlLux">—</strong>
+                  <span class="metric-unit">lux</span>
+                  <div class="sub" id="controlDuty">Current PWM —</div>
+                </div>
+                <div class="buttons">
+                  <button id="applyDuty">Save Brightness</button
+                  ><button id="lightOnButton">Turn Light On</button
+                  ><button class="secondary" id="lightOffButton">
+                    Turn Light Off</button
+                  ><button class="secondary" id="lightAutoButton">
+                    Restore Automatic Mode
+                  </button>
+                </div>
+                <div class="notice">
+                  On/off and brightness changes use the existing device
+                  interface. Observe the light and sensor readings, and avoid
+                  staring at a bright light for extended periods.
+                </div>
+              </article>
+              <article class="card">
+                <h3>Pump Test</h3>
+                <p class="hint">
+                  For hardware integration testing only. Firmware limits each
+                  run to 3 seconds and enforces a daily cumulative runtime
+                  limit.
+                </p>
+                <div class="field">
+                  <label>Test Duration (seconds)</label
+                  ><input
+                    id="pumpDuration"
+                    type="number"
+                    min="0.25"
+                    max="3"
+                    step="0.25"
+                    value="2"
+                  />
+                </div>
+                <div class="buttons">
+                  <button class="warning" id="pumpButton">Test Pump</button
+                  ><button class="secondary" id="pumpResetButton">
+                    Reset Watering Limits
+                  </button>
+                </div>
+                <div class="notice">
+                  Before testing, ensure the pump intake is submerged, the
+                  outlet tube is secured, and the power and water setup is safe.
+                  Reset clears the device watering interval and daily cumulative
+                  runtime; use it only for testing.
+                </div>
+                <hr class="divider" />
+                <h3>Automatic Watering Parameters</h3>
+                <div class="fields">
+                  <label class="field"
+                    >Automatic Watering<input
+                      id="autoWater"
+                      type="checkbox" /></label
+                  ><label class="field"
+                    >Soil Start Threshold (%)<input
+                      id="soilThreshold"
+                      type="number"
+                      min="0"
+                      max="100" /></label
+                  ><label class="field"
+                    >Pulse Duration (ms)<input
+                      id="pulseMs"
+                      type="number"
+                      min="250"
+                      max="3000"
+                      step="250" /></label
+                  ><label class="field"
+                    >Minimum Interval (minutes)<input
+                      id="intervalMin"
+                      type="number"
+                      min="1"
+                      max="1440" /></label
+                  ><label class="field"
+                    >Daily Limit (seconds)<input
+                      id="dailyLimit"
+                      type="number"
+                      min="1"
+                      max="60"
+                  /></label>
+                </div>
+                <div class="hint" style="margin-top: 12px">
+                  The soil start threshold allows watering when moisture is at
+                  or below the selected percentage. For example, with a 5%
+                  threshold, the reading must be 5% or lower. Automatic Watering
+                  must also be enabled and the settings saved.
+                </div>
+                <div class="buttons">
+                  <button id="saveWaterConfig">
+                    Save Automatic Watering Parameters
+                  </button>
+                </div>
+              </article>
+              <article class="card">
+                <h3>Automatic Lighting Strategy</h3>
+                <p class="hint">
+                  The device uses measured BH1750 lux to decide when to add
+                  light. Hysteresis prevents frequent switching near the
+                  threshold.
+                </p>
+                <label class="field"
+                  >Automatic Lighting<input id="autoLight" type="checkbox"
+                /></label>
+                <div class="fields" style="margin-top: 13px">
+                  <label class="field"
+                    >Turn on below (lux)<input
+                      id="luxThreshold"
+                      type="number"
+                      min="0"
+                      max="200000" /></label
+                  ><label class="field"
+                    >Turn off above threshold by (lux)<input
+                      id="luxHysteresis"
+                      type="number"
+                      min="0"
+                      max="200000" /></label
+                  ><label class="field"
+                    >Automatic Lighting PWM<input
+                      id="lightDutyNumber"
+                      type="number"
+                      min="0"
+                      max="4095"
+                  /></label>
+                </div>
+                <div class="buttons">
+                  <button id="saveConfig">
+                    Save Automatic Control Settings
+                  </button>
+                </div>
+                <div class="notice">
+                  Manual mode takes priority over Automatic Lighting. The device
+                  resumes the lux strategy after you select Restore Automatic
+                  Mode—
+                </div>
+              </article>
+              <article class="card">
+                <h3>Scheduled Lighting Strategy</h3>
+                <p class="hint">
+                  The schedule runs locally on the ESP32 and continues to use
+                  saved settings if the network is interrupted.
+                </p>
+                <div class="fields">
+                  <label class="field"
+                    >Scheduled On (hour)<input
+                      id="lightOnHour"
+                      type="number"
+                      min="0"
+                      max="23" /></label
+                  ><label class="field"
+                    >Scheduled Off (hour)<input
+                      id="lightOffHour"
+                      type="number"
+                      min="0"
+                      max="23"
+                  /></label>
+                </div>
+                <div class="buttons">
+                  <button class="secondary" id="saveSchedule">
+                    Save Schedule
+                  </button>
+                </div>
+              </article>
+            </div>
+          </section>
 
-      <section class="view" id="analysis"><div class="section-head"><div><h2>Time-Series Analysis</h2><p>Coursework requirements: one week of heterogeneous sensor data, trends, correlations, fusion, and control outcomes</p></div><div class="toolbar"><select id="dataset"><option value="plant-box-01">Real Device Data</option><option value="plant-box-demo">Seven-Day Scenario (Synthetic)</option></select><button class="secondary" id="demoButton">Load Seven-Day CSV Scenario</button></div></div><div class="grid analysis-metrics"><article class="card"><div class="metric-label">Samples in Period</div><div class="metric-value" id="analysisCount">—</div><div class="sub" id="analysisCoverage">—</div></article><article class="card"><div class="metric-label">Average Soil Moisture</div><div class="metric-value" id="meanSoil">—</div></article><article class="card"><div class="metric-label">Average Light</div><div class="metric-value" id="meanLux">—</div></article><article class="card"><div class="metric-label">Light-Temperature Correlation</div><div class="metric-value" id="lightTempCorrelation">—</div><div class="sub">Correlation is not causation</div></article></div><div class="grid charts"><article class="card chart-card"><h3>Heterogeneous Environmental Data Fusion</h3><canvas id="analysisAirChart"></canvas><div class="sub">Temperature (°C), humidity (% RH), and normalized light (%) share the time axis; light is clamped to 0–15,000 lux and scaled to 0–100; samples use an irregular interval of about 3 hours and the chart uses a shared 0–100 display scale; temperature remains in °C, humidity remains in %RH, and light is normalized.</div></article><article class="card chart-card"><h3>Soil Moisture Response</h3><canvas id="analysisSoilChart"></canvas><div class="sub">Red markers indicate scenario watering-event timestamps, not pump runtime</div></article></div><article class="card analysis-reading"><h3>Interpretation of This Dataset</h3><p id="analysisNarrative">Select a dataset to see its coverage, events, and interpretation.</p></article><div class="notice">Synthetic CSV scenario for interface and analysis-method demonstration only; 56 samples at irregular intervals, with weather variation, three watering-event markers and complete environmental readings. It is not real device data and must not be reported as a measured experiment.</div></section>
+          <section class="view" id="analysis">
+            <div class="section-head">
+              <div>
+                <h2>Time-Series Analysis</h2>
+                <p>
+                  Select dates to view stored environmental readings, trends,
+                  and correlations
+                </p>
+              </div>
+              <div class="toolbar">
+                <label class="field"
+                  >Start Date (UTC+8)<input
+                    type="date"
+                    id="analysisStart" /></label
+                ><label class="field"
+                  >End Date (UTC+8)<input
+                    type="date"
+                    id="analysisEnd" /></label
+                ><button class="secondary" id="analysisQuery">
+                  View Records
+                </button>
+              </div>
+            </div>
+            <div class="grid analysis-metrics">
+              <article class="card">
+                <div class="metric-label">Samples in Period</div>
+                <div class="metric-value" id="analysisCount">—</div>
+                <div class="sub" id="analysisCoverage">—</div>
+              </article>
+              <article class="card">
+                <div class="metric-label">Average Soil Moisture</div>
+                <div class="metric-value" id="meanSoil">—</div>
+              </article>
+              <article class="card">
+                <div class="metric-label">Average Light</div>
+                <div class="metric-value" id="meanLux">—</div>
+              </article>
+              <article class="card">
+                <div class="metric-label">Light-Temperature Correlation</div>
+                <div class="metric-value" id="lightTempCorrelation">—</div>
+                <div class="sub">Correlation is not causation</div>
+              </article>
+            </div>
+            <div class="grid charts">
+              <article class="card chart-card">
+                <h3>Heterogeneous Environmental Data Fusion</h3>
+                <canvas id="analysisAirChart"></canvas>
+                <div class="sub">
+                  Temperature (°C), humidity (% RH), and normalized light (%)
+                  share the time axis; light is clamped to 0–15,000 lux and
+                  scaled to 0–100; the chart uses a shared 0–100 display scale;
+                  temperature remains in °C, humidity remains in %RH, and light
+                  is normalized.
+                </div>
+              </article>
+              <article class="card chart-card">
+                <h3>Soil Moisture Response</h3>
+                <canvas id="analysisSoilChart"></canvas>
+                <div class="sub">
+                  Red markers indicate pump status at recorded timestamps, not
+                  pump runtime
+                </div>
+              </article>
+            </div>
+          </section>
 
-      <section class="view" id="events"><div class="section-head"><div><h2>Activity Log</h2><p>Review device commands, configuration changes, and system events</p></div><button class="secondary" id="refreshButton">Refresh Now</button></div><article class="card"><ul class="events" id="eventsList"><li class="empty">Waiting for data...</li></ul></article></section>
+          <section class="view" id="events">
+            <div class="section-head">
+              <div>
+                <h2>Activity Log</h2>
+                <p>
+                  Review device commands, configuration changes, and system
+                  events
+                </p>
+              </div>
+              <button class="secondary" id="refreshButton">Refresh Now</button>
+            </div>
+            <article class="card">
+              <ul class="events" id="eventsList">
+                <li class="empty">Waiting for data...</li>
+              </ul>
+            </article>
+          </section>
+        </div>
+      </main>
     </div>
-  </main>
-</div><div class="toast" id="toast"></div>
-<script>
-  const $=id=>document.getElementById(id);let readings=[];let config={};let actualDevice='plant-box-01';const colors={green:'#2c8558',blue:'#3a82bd',orange:'#d58a32',red:'#b54d45'};
-  function toast(message){const box=$('toast');box.textContent=message;box.style.display='block';clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>box.style.display='none',4000)}
-  async function api(path,options={}){const response=await fetch(path,{headers:{'Content-Type':'application/json',...(options.headers||{})},...options});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.detail||`HTTP ${response.status}`);return body}
-  function fmt(value,digits=1){return value===null||value===undefined||!Number.isFinite(Number(value))?'—':Number(value).toFixed(digits)}
-  function drawChart(id,series,min=null,max=null,independent=false){const canvas=$(id),rect=canvas.getBoundingClientRect(),ratio=devicePixelRatio||1;if(!rect.width)return;canvas.width=rect.width*ratio;canvas.height=rect.height*ratio;const ctx=canvas.getContext('2d');ctx.setTransform(ratio,0,0,ratio,0,0);const w=rect.width,h=rect.height,p={l:42,r:10,t:12,b:27};ctx.clearRect(0,0,w,h);ctx.font='10px system-ui';ctx.strokeStyle='#e8efea';ctx.fillStyle='#728077';for(let i=0;i<4;i++){const y=p.t+(h-p.t-p.b)*i/3;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke()}const all=series.flatMap(s=>s.values.map(v=>v.value).filter(Number.isFinite));if(!all.length){ctx.fillText('No data available',p.l+8,h/2);return}let lo=min===null?Math.min(...all):min,hi=max===null?Math.max(...all):max;if(lo===hi){lo-=1;hi+=1}ctx.fillText(hi.toFixed(0),2,p.t+4);ctx.fillText(lo.toFixed(0),2,h-p.b+3);const start=new Date(readings[0]?.recorded_at||Date.now()).getTime(),end=new Date(readings[readings.length-1]?.recorded_at||Date.now()).getTime()||start+1;series.forEach(s=>{const values=s.values.filter(v=>Number.isFinite(v.value));let a=lo,b=hi;if(independent&&values.length){a=Math.min(...values.map(v=>v.value));b=Math.max(...values.map(v=>v.value));if(a===b){a-=1;b+=1}}ctx.strokeStyle=s.color;ctx.fillStyle=s.color;ctx.lineWidth=2;ctx.beginPath();let started=false;for(const point of s.values){if(!Number.isFinite(point.value)){started=false;continue}const x=p.l+((new Date(point.time).getTime()-start)/Math.max(1,end-start))*(w-p.l-p.r),y=p.t+(b-point.value)/(b-a)*(h-p.t-p.b);if(s.marker){ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();continue}if(!started){ctx.moveTo(x,y);started=true}else ctx.lineTo(x,y)}if(started)ctx.stroke()});let x=p.l;series.forEach(s=>{ctx.fillStyle=s.color;if(s.marker){ctx.beginPath();ctx.arc(x+4,h-12,3,0,Math.PI*2);ctx.fill()}else ctx.fillRect(x,h-13,9,3);ctx.fillStyle='#536158';ctx.fillText(s.name,x+13,h-9);x+=ctx.measureText(s.name).width+34})}
-  function renderOverviewCharts(){drawChart('airChart',[{name:'-C',color:colors.orange,values:readings.map(r=>({time:r.recorded_at,value:r.air_temperature}))},{name:'% RH',color:colors.blue,values:readings.map(r=>({time:r.recorded_at,value:r.air_humidity}))}],null,null,true);drawChart('soilChart',[{name:'Soil %',color:colors.green,values:readings.map(r=>({time:r.recorded_at,value:r.soil_moisture_percent}))}],0,100);drawChart('lightChart',[{name:'lux',color:colors.orange,values:readings.map(r=>({time:r.recorded_at,value:r.light_lux}))}],0,null);drawChart('actuatorChart',[{name:'Pump',color:colors.red,values:readings.map(r=>({time:r.recorded_at,value:r.pump_running?1:0}))},{name:'PWM',color:colors.blue,values:readings.map(r=>({time:r.recorded_at,value:r.light_duty}))}],0,4095)}
-  function pearson(points){const p=points.filter(v=>Number.isFinite(v[0])&&Number.isFinite(v[1]));if(p.length<2)return null;const ax=p.reduce((s,v)=>s+v[0],0)/p.length,ay=p.reduce((s,v)=>s+v[1],0)/p.length;let n=0,x=0,y=0;for(const [a,b] of p){n+=(a-ax)*(b-ay);x+=(a-ax)**2;y+=(b-ay)**2}return x&&y?n/Math.sqrt(x*y):null}
-  function renderAnalysis(){const mean=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:null;const soil=readings.map(r=>r.soil_moisture_percent).filter(Number.isFinite),lux=readings.map(r=>r.light_lux).filter(Number.isFinite),temp=readings.map(r=>r.air_temperature).filter(Number.isFinite);const pumps=readings.filter(r=>r.pump_running);const missing=readings.length-Math.min(soil.length,lux.length,temp.length);const first=readings[0]?.recorded_at,last=readings[readings.length-1]?.recorded_at;$('analysisCount').textContent=readings.length;$('analysisCoverage').textContent=first&&last?`${new Date(first).toLocaleDateString()} - ${new Date(last).toLocaleDateString()}`:'No coverage';$('meanSoil').innerHTML=`${fmt(mean(soil),1)} <span class="metric-unit">%</span>`;$('meanLux').innerHTML=`${fmt(mean(lux),0)} <span class="metric-unit">lux</span>`;$('lightTempCorrelation').textContent=fmt(pearson(readings.map(r=>[r.light_lux,r.air_temperature])),2);const minSoil=soil.length?Math.min(...soil):null,maxSoil=soil.length?Math.max(...soil):null;const pumpTimes=pumps.map(r=>new Date(r.recorded_at).toLocaleString()).join(', ');$('analysisNarrative').textContent=readings.length?`This synthetic dataset contains ${readings.length} samples at irregular intervals over about seven days. Light levels differ between days to represent changing weather; temperature and humidity also vary rather than repeating an identical daily profile. ${pumps.length?`${pumps.length} watering-event timestamps are marked at ${pumpTimes}. Soil readings rise after these markers in the scenario, then decline as the soil dries; the sampling cannot show the actual pump pulse duration.`:'No watering events are marked.'} Calibrated soil moisture ranges from ${minSoil}% to ${maxSoil}%. All environmental channels are complete for this scenario, so the averages and correlation use all samples. Light is normalized for the fusion chart using a 0–15,000 lux reference range. Light-temperature correlation can reflect shared daily timing and is not evidence of causation. Treat all of these patterns as authored scenario assumptions, not empirical findings.`:'Select a dataset to see its coverage, events, and interpretation.';drawChart('analysisAirChart',[{name:'Temp -C',color:colors.orange,values:readings.map(r=>({time:r.recorded_at,value:r.air_temperature}))},{name:'Humidity %RH',color:colors.green,values:readings.map(r=>({time:r.recorded_at,value:r.air_humidity}))},{name:'Light % (15k lux)',color:colors.blue,values:readings.map(r=>({time:r.recorded_at,value:Number.isFinite(r.light_lux)?Math.max(0,Math.min(100,r.light_lux/15000*100)):null}))}],0,100,false);drawChart('analysisSoilChart',[{name:'Soil %',color:colors.green,values:readings.map(r=>({time:r.recorded_at,value:r.soil_moisture_percent}))},{name:'Pump event',color:colors.red,marker:true,values:readings.map(r=>({time:r.recorded_at,value:r.pump_running?100:null}))}],0,100)}
-  async function refreshStatus(){try{const [status,data,events]=await Promise.all([api('/api/status'),api(`/api/readings?hours=${$('range').value}&limit=3000`),api('/api/events?limit=30')]);actualDevice=status.device_id;if(!$('analysis').classList.contains('active'))readings=data;$('deviceName').textContent=actualDevice;$('temperature').innerHTML=`${fmt(status.latest?.air_temperature)} <span class="metric-unit">-C</span>`;$('humidity').innerHTML=`${fmt(status.latest?.air_humidity)} <span class="metric-unit">% RH</span>`;$('soil').innerHTML=`${fmt(status.latest?.soil_moisture_percent,0)} <span class="metric-unit">%</span>`;$('soilRaw').textContent=`Raw ADC ${status.latest?.soil_moisture_raw??'—'}`;$('light').innerHTML=`${fmt(status.latest?.light_lux,0)} <span class="metric-unit">lux</span>`;$('controlLux').textContent=fmt(status.latest?.light_lux,0);$('controlDuty').textContent=`Current PWM ${status.latest?.light_duty??'—'}`;$('lastSeen').textContent=status.last_seen?new Date(status.last_seen).toLocaleString():'—';$('readingCount').textContent=`Total Readings: ${status.reading_count}`;$('deviceStatus').innerHTML=status.online?'<span class="online">-evice Online</span>':'<span class="offline">-evice Offline</span>';$('eventsList').innerHTML=events.length?events.map(e=>`<li><span>${escapeHtml(e.event_type)} - ${escapeHtml(e.message)}</span><small>${new Date(e.created_at).toLocaleString()}</small></li>`).join(''):'<li class="empty">No events</li>';if(!$('analysis').classList.contains('active'))renderOverviewCharts()}catch(error){toast(error.message)}}
-  async function loadConfig(){try{config=await api('/api/config');$('lightOnHour').value=Math.floor(config.light_on_minute/60);$('lightOffHour').value=Math.floor(config.light_off_minute/60);$('lightDutyRange').value=config.light_duty;$('lightDutyNumber').value=config.light_duty;$('soilThreshold').value=config.soil_start_threshold;$('pulseMs').value=config.water_pulse_ms;$('intervalMin').value=Math.round(config.water_interval_ms/60000);$('dailyLimit').value=Math.round(config.max_daily_pump_ms/1000);$('autoWater').checked=config.auto_water_enabled;$('autoLight').checked=config.auto_light_enabled;$('luxThreshold').value=config.light_lux_threshold;$('luxHysteresis').value=config.light_lux_hysteresis;updateDutyLabel()}catch(error){toast(error.message)}}
-  function updateDutyLabel(){const value=Number($('lightDutyRange').value);$('lightDutyValue').textContent=`${value} / ${Math.round(value/4095*100)}%`;$('lightDutyNumber').value=value}
-  async function saveConfig(scheduleOnly=false){try{const body={schedule_enabled:true,light_on_minute:Number($('lightOnHour').value)*60,light_off_minute:Number($('lightOffHour').value)*60,light_duty:Number($('lightDutyNumber').value),auto_light_enabled:$('autoLight').checked,light_lux_threshold:Number($('luxThreshold').value),light_lux_hysteresis:Number($('luxHysteresis').value),auto_water_enabled:$('autoWater').checked,soil_start_threshold:Number($('soilThreshold').value),water_pulse_ms:Number($('pulseMs').value),water_interval_ms:Number($('intervalMin').value)*60000,max_daily_pump_ms:Number($('dailyLimit').value)*1000};await api('/api/config',{method:'PUT',body:JSON.stringify(body)});toast(scheduleOnly?'Schedule saved':'Automatic control settings saved; the device will retrieve them on its next poll')}catch(error){toast(error.message)}}
-  async function sendCommand(action,text,duration=2000){if(!confirm(text))return;try{const r=await api('/api/commands',{method:'POST',body:JSON.stringify({action,duration_ms:duration})});toast(`Command queued #${r.id}`);setTimeout(refreshStatus,1800)}catch(error){toast(error.message)}}
-  function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-  async function loadAnalysis(){const id=$('dataset').value;try{readings=await api(`/api/readings?device_id=${encodeURIComponent(id)}&hours=168&limit=3000`);renderAnalysis()}catch(error){toast(error.message)}}
-  document.querySelectorAll('.nav button').forEach(button=>button.onclick=()=>{document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));button.classList.add('active');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$(button.dataset.view).classList.add('active');$('pageTitle').textContent=button.textContent.trim().slice(2);if(button.dataset.view==='analysis')loadAnalysis()});
-  $('lightDutyRange').oninput=updateDutyLabel;$('lightDutyNumber').oninput=()=>{$('lightDutyRange').value=$('lightDutyNumber').value;updateDutyLabel()};$('applyDuty').onclick=()=>saveConfig();$('saveConfig').onclick=()=>saveConfig();$('saveWaterConfig').onclick=()=>saveConfig();$('saveSchedule').onclick=()=>saveConfig(true);$('lightOnButton').onclick=()=>sendCommand('light_on','Turn on the plant light?');$('lightOffButton').onclick=()=>sendCommand('light_off','Turn off the plant light?');$('lightAutoButton').onclick=()=>sendCommand('light_auto','Restore automatic lighting/schedule mode?');$('pumpButton').onclick=()=>{const s=Number($('pumpDuration').value);if(!Number.isFinite(s)||s<=0||s>3){toast('Pump duration must be between 0 and 3 seconds');return}sendCommand('pump_test',`Start the pump for ${s} seconds? Confirm that the intake and outlet are safe.`,Math.round(s*1000))};$('pumpResetButton').onclick=()=>sendCommand('pump_reset','Reset the device watering interval and daily cumulative limit? For testing only.');$('range').onchange=refreshStatus;$('refreshButton').onclick=refreshStatus;$('csvButton').onclick=()=>location.href=`/api/readings.csv?hours=${$('range').value}`;$('dataset').onchange=loadAnalysis;$('demoButton').onclick=async()=>{if(!confirm('Load or replace the seven-day hand-authored scenario dataset? This will not modify real device data.'))return;try{const r=await api('/api/demo/week?device_id=plant-box-demo',{method:'POST'});toast(`Loaded ${r.samples} scenario records`);$('dataset').value='plant-box-demo';loadAnalysis()}catch(error){toast(error.message)}};window.onresize=()=>{renderOverviewCharts();if($('analysis').classList.contains('active'))renderAnalysis()};loadConfig();refreshStatus();setInterval(refreshStatus,5000)</script>
-</body>
+    <div class="toast" id="toast"></div>
+    <script src="/static/app.js"></script>
+  </body>
 </html>
 

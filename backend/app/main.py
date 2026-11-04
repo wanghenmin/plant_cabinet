@@ -4,13 +4,14 @@ import io
 import json
 import os
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Annotated
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.responses import FileResponse, Response, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 
@@ -25,6 +26,7 @@ DEVICE_TOKEN = os.getenv("DEVICE_TOKEN", "")
 ONLINE_TIMEOUT = max(10, int(os.getenv("DEVICE_ONLINE_TIMEOUT_SECONDS", "45")))
 
 app = FastAPI(title="Plant Cabinet", version="1.0.0")
+app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
 
 
 class SensorReading(BaseModel):
@@ -185,7 +187,7 @@ def status(device_id: str = Query(DEVICE_ID)) -> dict:
     with connect_db() as db:
         state = db.execute("SELECT * FROM device_state WHERE device_id=?", (device_id,)).fetchone()
         latest = db.execute(
-            "SELECT * FROM readings WHERE device_id=? ORDER BY id DESC LIMIT 1", (device_id,)
+            "SELECT * FROM readings WHERE device_id=? ORDER BY recorded_at DESC, id DESC LIMIT 1", (device_id,)
         ).fetchone()
         count = db.execute("SELECT COUNT(*) AS n FROM readings WHERE device_id=?", (device_id,)).fetchone()["n"]
     return {
@@ -228,10 +230,25 @@ def readings(
     cutoff = timestamp(now_utc() - timedelta(hours=hours))
     with connect_db() as db:
         rows = db.execute(
-            "SELECT * FROM readings WHERE device_id=? AND recorded_at>=? ORDER BY id DESC LIMIT ?",
+            "SELECT * FROM readings WHERE device_id=? AND recorded_at>=? ORDER BY recorded_at DESC, id DESC LIMIT ?",
             (device_id, cutoff, limit),
         ).fetchall()
     return [dict(row) for row in reversed(rows)]
+
+
+@app.get("/api/analysis/readings")
+def analysis_readings(start_date: date, end_date: date, device_id: str = Query(DEVICE_ID)) -> list[dict]:
+    if end_date < start_date or (end_date - start_date).days >= 31:
+        raise HTTPException(status_code=422, detail="Select a date range of 1 to 31 days")
+    local_zone = timezone(timedelta(hours=8))
+    start = datetime.combine(start_date, time.min, local_zone).astimezone(timezone.utc)
+    end = datetime.combine(end_date + timedelta(days=1), time.min, local_zone).astimezone(timezone.utc)
+    with connect_db() as db:
+        rows = db.execute(
+            "SELECT * FROM readings WHERE device_id=? AND recorded_at>=? AND recorded_at<? ORDER BY recorded_at, id",
+            (device_id, timestamp(start), timestamp(end)),
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 @app.get("/api/readings.csv")
@@ -333,44 +350,5 @@ def events(device_id: str = Query(DEVICE_ID), limit: int = Query(50, ge=1, le=50
     return sorted(combined, key=lambda item: item["created_at"], reverse=True)[:limit]
 
 
-@app.post("/api/demo/week")
-def generate_demo_week(device_id: str = Query("plant-box-demo"), replace: bool = Query(True)) -> dict:
-    """Load a clearly labelled CSV scenario for analysis demonstrations."""
-    if not device_id.endswith("-demo"):
-        raise HTTPException(status_code=422, detail="Demo device IDs must end with -demo")
-    end = now_utc().replace(minute=0, second=0, microsecond=0)
-    start = end - timedelta(hours=165)
-    rows = []
-    csv_path = BACKEND_DIR / "data" / "demo_week_scenario.csv"
-    with csv_path.open("r", newline="", encoding="utf-8") as source:
-        for record in csv.DictReader(source):
-            def optional_float(value: str) -> float | None:
-                return None if value == "NA" else float(value)
-
-            point_time = start + timedelta(hours=float(record["hour_offset"]))
-            soil_percent = int(record["soil_moisture_percent"])
-            soil_raw = int(record["soil_moisture_raw"])
-            rows.append((device_id, timestamp(point_time),
-                         optional_float(record["air_temperature"]),
-                         optional_float(record["air_humidity"]),
-                         optional_float(record["light_lux"]),
-                         soil_raw, soil_percent,
-                         int(record["pump_running"]), int(record["light_duty"])))
-    with connect_db() as db:
-        if replace:
-            db.execute("DELETE FROM readings WHERE device_id=?", (device_id,))
-        db.executemany(
-            """INSERT INTO readings
-            (device_id, recorded_at, air_temperature, air_humidity, light_lux,
-             soil_moisture_raw, soil_moisture_percent, pump_running, light_duty)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", rows)
-        db.execute(
-            "INSERT INTO events(device_id,event_type,message,created_at) VALUES(?,?,?,?)",
-            (device_id, "demo", "Loaded seven-day synthetic scenario from CSV", timestamp()),
-        )
-    intervals = [float(record["hour_offset"]) for record in csv.DictReader(csv_path.open("r", newline="", encoding="utf-8"))]
-    return {"device_id": device_id, "samples": len(rows),
-            "sampling_interval_hours": round(sum(b - a for a, b in zip(intervals, intervals[1:])) / max(1, len(intervals) - 1), 2),
-            "missing_environment_records": sum(row[2] is None or row[3] is None or row[4] is None for row in rows)}
 
 
